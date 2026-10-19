@@ -7,7 +7,7 @@ const port = Number(process.env.PORT || 4173), url = 'http://127.0.0.1:' + port;
 if (Number(process.versions.node.split('.')[0]) < 24) throw new Error('请先安装 Node.js 24 或更新版本，再打开学习室。');
 if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('PORT 需为 1024—65535 的整数。');
 async function running() {
-  try { const r = await fetch(url + '/api/health', { signal: AbortSignal.timeout(1500) }); const health = await r.json(); if (health.app === 'kotoba' && health.version === '0.3.0' && health.projectRoot === root) return true; throw new Error('此端口正在运行其他程序或旧版 Kotoba。请先停止对应服务，或设置 PORT 使用其他端口。'); }
+  try { const r = await fetch(url + '/api/health', { signal: AbortSignal.timeout(1500) }); const health = await r.json(); if (health.app === 'kotoba' && health.version === '0.3.1' && health.projectRoot === root) return true; throw new Error('此端口正在运行其他程序或旧版 Kotoba。请先停止对应服务，或设置 PORT 使用其他端口。'); }
   catch (e) { if (e.message.startsWith('此端口')) throw e; return false; }
 }
 const dataDir = process.env.KOTOBA_DATA_DIR || resolve(root, 'data');

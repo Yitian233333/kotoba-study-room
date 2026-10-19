@@ -32,7 +32,7 @@ export function createApp({dataDir=process.env.KOTOBA_DATA_DIR||resolve(root,'da
         const supplied=path==='/api/autosave'?(req.headers['x-kotoba-token']||body.token):req.headers['x-kotoba-token'];
         if(supplied!==token)return json(res,403,{error:'页面连接已更新，请刷新后重试。'});
       }
-      if(path==='/api/health'&&req.method==='GET')return json(res,200,{app:'kotoba',version:'0.3.0',projectRoot:root});
+      if(path==='/api/health'&&req.method==='GET')return json(res,200,{app:'kotoba',version:'0.3.1',projectRoot:root});
       if(path==='/api/state'&&req.method==='GET'){
         const state=store.read();return json(res,200,{state,token,revision:store.revision(),catalogKey:catalogKey(state)});
       }
@@ -111,7 +111,7 @@ export function createApp({dataDir=process.env.KOTOBA_DATA_DIR||resolve(root,'da
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const app=createApp(),port=Number(process.env.PORT||4173);
-  app.server.listen(port,'127.0.0.1',()=>console.log('Kotoba 0.3.0 课程库：http://127.0.0.1:'+port));
+  app.server.listen(port,'127.0.0.1',()=>console.log('Kotoba 0.3.1 课程库：http://127.0.0.1:'+port));
   app.server.on('error',e=>{console.error(e.code==='EADDRINUSE'?'端口已被占用，请先停止旧版学习室。':e.message);process.exitCode=1;});
   for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{app.close();process.exit(0);});
 }
