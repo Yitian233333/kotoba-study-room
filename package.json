@@ -1,0 +1,10 @@
+{
+  "name": "kotoba-study-room",
+  "version": "0.2.1",
+  "private": true,
+  "type": "module",
+  "description": "Codex 对话定制课程，本地阅读详细教材、路线图和全程计划。",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": { "start": "node src/server.mjs", "test": "node --test test/*.test.mjs", "course": "node scripts/course.mjs" },
+  "license": "MIT"
+}

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#203554">
+  <meta name="description" content="在 Codex 对话中定制完整课程，在本地学习室阅读教材与学习计划。">
+  <title>Kotoba · 我的学习室</title>
+  <link rel="icon" href="/app.ico" sizes="any">
+  <link rel="icon" href="/icon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">跳到主要内容</a>
+  <div id="app"><div class="initial-loading" role="status">正在打开你的学习室…</div></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="modal" aria-labelledby="modal-title"></dialog>
+  <script type="module" src="/app.mjs"></script>
+</body>
+</html>

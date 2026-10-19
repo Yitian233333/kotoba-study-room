@@ -1,0 +1,14 @@
+data/
+node_modules/
+dist/
+.codex/
+.agents/
+*.log
+.env
+.env.*
+*.sqlite*
+*.lnk
+*.pem
+*.key
+.DS_Store
+test-results/
