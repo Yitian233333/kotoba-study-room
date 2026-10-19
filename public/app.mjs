@@ -103,7 +103,8 @@ function render(){
   }
   $('#app').innerHTML=`<header class="topbar"><a class="brand" href="#/courses"><span class="brand-mark"><img src="/icon-128.png" width="43" height="43" alt=""></span><span><b>Kotoba</b><small>我的学习室</small></span></a><div class="top-actions"><span class="save-status" id="save-status" role="status">${pending.size?'正在自动保存…':'已自动保存'}</span><button class="btn subtle small" data-action="backup">数据备份</button></div></header><main id="main" class="workspace ${r.tab==='lesson'?'reading':''}" tabindex="-1">${body}</main><footer class="app-footer"><span>KOTOBA · 把想学的，变成学会的。</span><span>本地课程库 / 0.3.0</span></footer>`;
   document.title=(c?c.title+' · ':'')+'Kotoba 学习室';
-  restoring=true;const saved=r.tab==='lesson'?(state.progress[keyFor(c?.id,r.lessonId)]||((state.reader[c?.id]?.lessonId===r.lessonId)?state.reader[c.id]:null)):null;
+  restoring=true;const lessonProgress=state.progress[keyFor(c?.id,r.lessonId)];
+  const saved=r.tab==='lesson'?(Number.isFinite(lessonProgress?.scrollY)?lessonProgress:((state.reader[c?.id]?.lessonId===r.lessonId)?state.reader[c.id]:null)):null;
   requestAnimationFrame(()=>{window.scrollTo(0,saved?saved.scrollY||0:0);requestAnimationFrame(()=>{restoring=false;savePosition();});});
 }
 function filterLibrary(){const query=($('#search')?.value||'').toLowerCase(),subject=$('#subject-filter')?.value;let visible=0;document.querySelectorAll('.course-card').forEach(el=>{const match=el.dataset.course.includes(query)&&(!subject||el.dataset.subject===subject);el.hidden=!match;if(match)visible++;});$('#no-match')?.classList.toggle('hidden',visible>0||!state.courses.length);}
@@ -201,7 +202,7 @@ async function poll(){
     persistPending();await flush();if(pending.size)return;
     const previousCourse=state.courses.find(c=>c.id===route.courseId);await load();
     const currentCourse=state.courses.find(c=>c.id===route.courseId);
-    if(previousCourse?.revision!==currentCourse?.revision&&currentCourse)render();
+    if(currentCourse&&(!previousCourse||previousCourse.revision!==currentCourse.revision||previousCourse.updatedAt!==currentCourse.updatedAt))render();
     if(route.view!=='course'||!ids.has(route.courseId)){
       if($('#modal').open&&!deletion?.busy)$('#modal').close();
       if(route.view==='course')location.hash='#/courses';
