@@ -1,47 +1,38 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Store } from '../src/store.mjs';
-import { validateCourse, assert } from '../src/domain.mjs';
+import { validateCourse, courseStats, assert } from '../src/domain.mjs';
 import { bookHtml } from '../src/book.mjs';
+import { publishCourse, publishBatch } from '../src/publishing.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const dataDir=resolve(process.env.KOTOBA_DATA_DIR||resolve(root,'data'));
 const [command,arg]=process.argv.slice(2);
-function readCourse(path){assert(path,'请提供完整课程 JSON 的路径。');return validateCourse(JSON.parse(readFileSync(resolve(path),'utf8').replace(/^\uFEFF/,'')),{requireComplete:true});}
+function readJson(path){assert(path,'请提供 JSON 文件路径。');return JSON.parse(readFileSync(resolve(path),'utf8').replace(/^\uFEFF/,''));}
 try{
   if(command==='brief'){
     assert(arg?.trim(),'请提供科目。');mkdirSync(resolve(dataDir,'briefs'),{recursive:true});
     const file=resolve(dataDir,'briefs',Date.now()+'.json');
-    writeFileSync(file,JSON.stringify({subject:arg,goal:null,level:null,minutesPerDay:null,daysPerWeek:null,weeks:null,deadline:null,preferences:null,status:'interviewing'},null,2),'utf8');
-    console.log(JSON.stringify({briefPath:file,nextQuestion:'请集中说明'+arg+'的学习目标、当前基础、每天可用时间、每周频率、期限，以及教材或输出偏好；已有答案无需重复。'},null,2));
+    writeFileSync(file,JSON.stringify({subject:arg,goal:null,level:null,minutesPerDay:null,daysPerWeek:null,weeks:null,deadline:null,preferences:null,status:'interviewing',generationMode:'incremental'},null,2),'utf8');
+    console.log(JSON.stringify({briefPath:file,nextQuestion:'请集中说明学习目标、当前基础、可用时间、期限和偏好；已有答案无需重复。需求明确后先规划全部章节与小节，再每次生成1至3节详细教材。'},null,2));
   }else if(command==='validate'){
-    const course=readCourse(arg);bookHtml(course);
-    console.log(JSON.stringify({ok:true,id:course.id,chapters:course.lessons.length,bodyCharacters:course.lessons.reduce((n,l)=>n+l.sections.reduce((m,s)=>m+s.body.length,0),0)},null,2));
-  }else if(command==='publish'){
-    const course=readCourse(arg),book=bookHtml(course),store=new Store(resolve(dataDir,'kotoba.sqlite'));
-    const dir=resolve(dataDir,'courses',course.id),files=[resolve(dir,'course.json'),resolve(dir,'book.html')];
-    let committed=false,created=false;
+    const course=validateCourse(readJson(arg));bookHtml(course);
+    console.log(JSON.stringify({ok:true,id:course.id,...courseStats(course),completeness:course.completeness,bodyCharacters:course.lessons.reduce((n,l)=>n+l.sections.reduce((m,s)=>m+s.body.length,0),0)},null,2));
+  }else if(['plan','append','publish'].includes(command)){
+    const input=readJson(arg),store=new Store(resolve(dataDir,'kotoba.sqlite'));
     try{
-      assert(!store.read().courses.some(c=>c.id===course.id),'课程编号已存在。为修订版本使用新的课程编号，保留原课程笔记。');
-      mkdirSync(dir,{recursive:true});
-      assert(files.every(p=>!existsSync(p)&&!existsSync(p+'.tmp')),'课程输出文件已存在，请检查课程编号。');
-      created=true;
-      writeFileSync(files[0]+'.tmp',JSON.stringify(course,null,2),'utf8');writeFileSync(files[1]+'.tmp',book,'utf8');
-      renameSync(files[0]+'.tmp',files[0]);renameSync(files[1]+'.tmp',files[1]);
-      store.update(s=>{assert(!s.courses.some(c=>c.id===course.id),'课程编号已存在。');s.courses.push({...course,createdAt:course.createdAt||new Date().toISOString()});});
-      committed=true;
-      console.log(JSON.stringify({ok:true,courseId:course.id,chapters:course.lessons.length,coursePath:files[0],bookPath:files[1],message:'完整课程已发布，课程列表将在几秒内自动更新。'},null,2));
-    }catch(e){
-      if(created&&!committed&&!store.read().courses.some(c=>c.id===course.id)){
-        for(const p of files)for(const candidate of [p+'.tmp',p])if(existsSync(candidate))unlinkSync(candidate);
-      }
-      throw e;
+      const course=command==='append'?publishBatch(store,dataDir,input):publishCourse(store,dataDir,input,{plan:command==='plan'});
+      console.log(JSON.stringify({ok:true,courseId:course.id,...courseStats(course),revision:course.revision,completeness:course.completeness,coursePath:resolve(dataDir,'courses',course.id,'course.json'),bookPath:resolve(dataDir,'courses',course.id,'book.html')},null,2));
     }finally{store.close();}
-  }else if(command==='list'){
+  }else if(command==='list'||command==='show'){
     const store=new Store(resolve(dataDir,'kotoba.sqlite'));
-    try{console.log(JSON.stringify(store.read().courses.map(c=>({id:c.id,title:c.title,chapters:c.lessons.length,completeness:c.completeness})),null,2));}finally{store.close();}
+    try{
+      const courses=store.read().courses;
+      const result=command==='show'?courses.find(c=>c.id===arg):courses.map(c=>({id:c.id,title:c.title,...courseStats(c),revision:c.revision,completeness:c.completeness}));
+      assert(result,'课程不存在。');console.log(JSON.stringify(result,null,2));
+    }finally{store.close();}
   }else{
-    console.log('使用方法：node scripts/course.mjs brief "学习主题" | validate <course.json> | publish <course.json> | list');
+    console.log('使用方法：node scripts/course.mjs brief "学习主题" | validate <course.json> | plan <plan.json> | append <batch.json> | show <course-id> | publish <complete-course.json> | list');
     if(command)process.exitCode=1;
   }
 }catch(e){console.error(e.message);process.exitCode=1;}

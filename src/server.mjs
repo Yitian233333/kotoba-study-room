@@ -4,12 +4,13 @@ import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Store } from './store.mjs';
-import { assert, applyAutosave, markRead, validateCourse, removeCourse } from './domain.mjs';
+import { assert, applyAutosave, markRead, validateCourse, removeCourse, isIncremental } from './domain.mjs';
 import { bookHtml } from './book.mjs';
+import { publishBatch } from './publishing.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.png':'image/png'};
-export function catalogKey(s){return s.courses.map(c=>c.id+':'+(c.updatedAt||c.createdAt||'')).join('|');}
+export function catalogKey(s){return s.courses.map(c=>c.id+':'+(c.revision??'')+':'+(c.updatedAt||c.createdAt||'')).join('|');}
 export function createApp({dataDir=process.env.KOTOBA_DATA_DIR||resolve(root,'data'),now=Date.now}={}){
   mkdirSync(dataDir,{recursive:true});const store=new Store(resolve(dataDir,'kotoba.sqlite')),token=randomBytes(24).toString('hex');
   const deletions=new Map(),fingerprint=c=>createHash('sha256').update(JSON.stringify(c)).digest('hex');
@@ -31,7 +32,7 @@ export function createApp({dataDir=process.env.KOTOBA_DATA_DIR||resolve(root,'da
         const supplied=path==='/api/autosave'?(req.headers['x-kotoba-token']||body.token):req.headers['x-kotoba-token'];
         if(supplied!==token)return json(res,403,{error:'页面连接已更新，请刷新后重试。'});
       }
-      if(path==='/api/health'&&req.method==='GET')return json(res,200,{app:'kotoba',version:'0.2.1',projectRoot:root});
+      if(path==='/api/health'&&req.method==='GET')return json(res,200,{app:'kotoba',version:'0.3.0',projectRoot:root});
       if(path==='/api/state'&&req.method==='GET'){
         const state=store.read();return json(res,200,{state,token,revision:store.revision(),catalogKey:catalogKey(state)});
       }
@@ -46,9 +47,12 @@ export function createApp({dataDir=process.env.KOTOBA_DATA_DIR||resolve(root,'da
         store.update(s=>markRead(s,body.courseId,body.lessonId));return json(res,200,{ok:true});
       }
       if(path==='/api/course/import'&&req.method==='POST'){
-        const c=validateCourse(body.course||body,{requireComplete:true});
+        const c=validateCourse(body.course||body);assert(c.completeness==='complete'||isIncremental(c),'请导入完整课程或分批课程规划。');
         store.update(s=>{assert(!s.courses.some(x=>x.id===c.id),'课程编号已存在，请给新版本使用不同编号。');s.courses.push(c);});
         return json(res,201,{ok:true,courseId:c.id});
+      }
+      if(path==='/api/course/batch'&&req.method==='POST'){
+        const c=publishBatch(store,dataDir,body);return json(res,200,{ok:true,courseId:c.id,revision:c.revision,completeness:c.completeness});
       }
       if(path==='/api/course/delete/prepare'&&req.method==='POST'){
         const c=store.read().courses.find(c=>c.id===body.courseId);assert(c,'课程不存在，可能已经删除。');
@@ -107,7 +111,7 @@ export function createApp({dataDir=process.env.KOTOBA_DATA_DIR||resolve(root,'da
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const app=createApp(),port=Number(process.env.PORT||4173);
-  app.server.listen(port,'127.0.0.1',()=>console.log('Kotoba 0.2.1 课程库：http://127.0.0.1:'+port));
+  app.server.listen(port,'127.0.0.1',()=>console.log('Kotoba 0.3.0 课程库：http://127.0.0.1:'+port));
   app.server.on('error',e=>{console.error(e.code==='EADDRINUSE'?'端口已被占用，请先停止旧版学习室。':e.message);process.exitCode=1;});
   for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{app.close();process.exit(0);});
 }

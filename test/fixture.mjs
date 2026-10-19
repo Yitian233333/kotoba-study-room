@@ -23,3 +23,20 @@ export function legacyFixture(){
     notes:{'legacy-sample:alpha':'保留的笔记'},attempts:[{answer:'明确删除的旧答题明细'}],
     taskAnswers:{'legacy-sample:alpha':'旧任务答案'},events:[{type:'answer'}],reviews:{old:true}};
 }
+export function planFixture(){
+  const course=courseFixture(),base=course.lessons[0],ids=['alpha','beta','gamma','delta','epsilon'];
+  course.id='qa-incremental';course.title='分批课程结构样本';course.generationMode='incremental';course.completeness='planned';course.revision=0;
+  course.lessons=ids.map((id,i)=>({...structuredClone(base),id,title:'结构验证小节 '+(i+1),status:'planned',prerequisites:i?[ids[i-1]]:[],knowledgePoints:['核对数据引用','核对保存规则'],sections:[],questions:[],task:'',criteria:[],coverage:[]}));
+  course.chapters=[{id:'foundation',title:'结构基础',lessonIds:ids.slice(0,2)},{id:'application',title:'结构应用',lessonIds:ids.slice(2)}];
+  course.plan.weeks[0].lessonIds=ids;course.roadmap.edges=ids.slice(1).map((id,i)=>({from:ids[i],to:id,reason:'验证前置顺序'}));
+  return course;
+}
+export function batchFixture(course,ids=['alpha']){
+  const text='合成结构测试正文，用于验证程序能够保存充分展开的讲解、示例、练习解析和实践标准。这不是实际课程教材，不应发布到真实课程库。';
+  return {courseId:course.id,expectedRevision:course.revision,lessons:ids.map(id=>({id,
+    sections:['现象与基础','规则与推导','完整示例','错误与迁移'].map(title=>({title,body:text.repeat(12)})),
+    questions:Array.from({length:3},(_,i)=>({id:id+'-check-'+i,q:'验证合成数据的处理流程 '+i,options:['符合结构','不符合结构'],answer:0,why:text.repeat(2)})),
+    task:text.repeat(3),criteria:['检查内容完整','检查引用一致','检查保存结果'],
+    coverage:course.lessons.find(l=>l.id===id).knowledgePoints.map((point,i)=>({point,sectionTitles:[i?'规则与推导':'现象与基础']}))
+  }))};
+}

@@ -1,6 +1,6 @@
 {
   "name": "kotoba-study-room",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Codex 对话定制课程，本地阅读详细教材、路线图和全程计划。",
