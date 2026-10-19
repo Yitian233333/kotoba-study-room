@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $projectPath = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$version = (Get-Content -LiteralPath (Join-Path $projectPath 'package.json') -Raw | ConvertFrom-Json).version
+$version = (Get-Content -LiteralPath (Join-Path $projectPath 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
 if (-not $OutputPath) { $OutputPath = Join-Path $projectPath "dist\Kotoba-framework-v$version.zip" }
 $archivePath = [IO.Path]::GetFullPath($OutputPath)
 if (Test-Path -LiteralPath $archivePath) { throw 'Package already exists. Choose a new output path.' }

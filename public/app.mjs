@@ -55,12 +55,12 @@ function exitSave(){
     if(body.size<60000)navigator.sendBeacon('/api/autosave',body);
   }
 }
-function badge(c){return `<span class="pill ${c.completeness==='legacy'?'legacy':''}">${c.completeness==='legacy'?'旧版课程':'完整课程'}</span>`;}
+function badge(c){return `<span class="pill ${c.completeness==='legacy'?'legacy':''}">${c.completeness==='legacy'?'导入课程':'完整课程'}</span>`;}
 function library(){
   const subjects=[...new Set(state.courses.map(c=>c.subject))];
   return `<div class="page-heading"><div><p class="eyebrow">YOUR PERSONAL LIBRARY</p><h1>我的课程库<span class="count">${state.courses.length}</span></h1><p class="muted">从一个想学的主题，到一本属于你的课程书。</p></div><button class="btn primary" data-action="create">＋ 在 Codex 中创建课程</button></div>
   <div class="library-tools"><label class="search"><span>⌕</span><input id="search" type="search" placeholder="搜索课程名称或科目" aria-label="搜索课程"></label><select id="subject-filter" aria-label="筛选科目"><option value="">所有科目</option>${subjects.map(s=>`<option>${e(s)}</option>`).join('')}</select><button class="btn subtle" data-action="import">导入课程</button></div>
-  <div class="course-grid" id="course-grid">${state.courses.length?state.courses.map((c,i)=>`<a class="course-card" data-course="${e((c.title+' '+c.subject).toLowerCase())}" data-subject="${e(c.subject)}" href="${courseUrl(c)}"><div class="book-cover tone-${i%3}"><span class="cover-subject">${e(c.subject)}</span><h2>${e(c.title)}</h2><p>${e(c.subtitle)}</p><span class="cover-mark">K / ${String(i+1).padStart(2,'0')}</span></div><div class="card-body"><div class="row">${badge(c)}<span class="muted">${c.lessons.length} 章</span></div><p>${e(c.description)}</p><div class="card-foot"><span>已读 ${countRead(c)} / ${c.lessons.length} 章</span><b>进入课程 ↗</b></div></div></a>`).join(''):`<div class="empty"><div class="empty-book">本</div><h2>第一门课程，从一句话开始</h2><p>在当前 Codex 聊天中说“我要学习日语”。<br>Codex 会逐个了解你的目标，再生成完整教材、路线和计划。</p><button class="btn primary" data-action="create">查看创建方式</button></div>`}</div><p id="no-match" class="muted hidden">没有找到匹配的课程。</p>
+  <div class="course-grid" id="course-grid">${state.courses.length?state.courses.map((c,i)=>`<a class="course-card" data-course="${e((c.title+' '+c.subject).toLowerCase())}" data-subject="${e(c.subject)}" href="${courseUrl(c)}"><div class="book-cover tone-${i%3}"><span class="cover-subject">${e(c.subject)}</span><h2>${e(c.title)}</h2><p>${e(c.subtitle)}</p><span class="cover-mark">K / ${String(i+1).padStart(2,'0')}</span></div><div class="card-body"><div class="row">${badge(c)}<span class="muted">${c.lessons.length} 章</span></div><p>${e(c.description)}</p><div class="card-foot"><span>已读 ${countRead(c)} / ${c.lessons.length} 章</span><b>进入课程 ↗</b></div></div></a>`).join(''):`<div class="empty"><div class="empty-book">本</div><h2>第一门课程，从一句话开始</h2><p>在当前 Codex 聊天中说明想学的科目。<br>Codex 会了解你的目标、基础和时间，再生成完整教材、路线和计划。</p><button class="btn primary" data-action="create">查看创建方式</button></div>`}</div><p id="no-match" class="muted hidden">没有找到匹配的课程。</p>
   <div class="library-note"><span>01 / 对话明确目标</span><span>02 / 一次生成完整课程</span><span>03 / 在课程中阅读与练习</span></div>`;
 }
 function sources(c){return `<ul class="sources">${c.sources.map(s=>`<li>${s.url?`<a href="${e(s.url)}" target="_blank" rel="noreferrer">${e(s.title)} ↗</a>`:e(s.title)}<small>${e(s.note||s.usage||'')}</small></li>`).join('')}</ul>`;}
@@ -68,7 +68,7 @@ function projects(c){return c.projects.map(p=>`<section class="project"><h3>${e(
 function overview(c){
   const resume=c.lessons.find(l=>l.id===state.reader[c.id]?.lessonId)||c.lessons[0];
   return `<div class="course-intro"><div><p class="eyebrow">${e(c.subject)} / COURSE</p><h1>${e(c.title)}</h1><p class="lead">${e(c.description)}</p><div class="row">${badge(c)}<span>${c.lessons.length} 章 · 已读 ${countRead(c)} 章</span></div></div><div class="continue-box"><span class="eyebrow">NEXT PAGE</span><h3>${e(resume.title)}</h3>${linkButton(state.reader[c.id]?'继续阅读 →':'开始阅读 →',lessonUrl(c,resume),'primary')}</div></div>
-  ${c.completeness==='legacy'?'<p class="notice">此课程来自第一版，保留已有内容供继续阅读。新建课程会按完整教材、路线图和全程计划的规则生成。</p>':''}
+  ${c.completeness==='legacy'?'<p class="notice">此课程未提供完整的学习计划和综合项目，可阅读已有教材。</p>':''}
   <div class="two-columns"><section class="panel"><p class="eyebrow">THE DESTINATION</p><h2>这门课为你解决什么</h2><p>${e(c.brief.goal)}</p><dl><div><dt>当前基础</dt><dd>${e(c.brief.level||'以课程前置要求为准')}</dd></div><div><dt>时间安排</dt><dd>${e(c.brief.minutesPerDay||'—')} 分钟 / 天 · ${e(c.brief.daysPerWeek||'—')} 天 / 周</dd></div></dl><h3>完成后，你将能够</h3><ul>${c.outcomes.map(x=>`<li>${e(x)}</li>`).join('')}</ul></section><section class="panel"><p class="eyebrow">HOW TO LEARN</p><h2>沿着知识的顺序学习</h2><p>先看目录和大纲路线图，理解每章的作用，再进入课件。讲解之后有例子、自测和实践任务，笔记会自动保存。</p><div class="quick-links">${linkButton('查看课程目录 ↗',courseUrl(c,'contents'),'secondary')}${linkButton('查看完整计划 ↗',courseUrl(c,'plan'),'secondary')}${linkButton('打开电子书 ↗',courseUrl(c,'book'),'secondary')}</div></section></div>
   ${c.projects.length?`<section class="panel"><p class="eyebrow">LEARN BY MAKING</p><h2>综合实践项目</h2>${projects(c)}</section>`:''}
   <section class="panel"><h2>参考与延伸阅读</h2>${sources(c)||'<p>暂无外部参考资料。</p>'}</section>
@@ -138,7 +138,7 @@ async function deleteFinal(el){
     if(deletion===current){deletion.busy=false;input.disabled=false;el.disabled=input.value!==current.title;$('#modal').querySelectorAll('[data-action="close"]').forEach(b=>b.disabled=false);}
   }
 }
-function createDialog(){dialog('在 Codex 聊天中创建完整课程',`<p>打开此项目的 Codex 聊天，发送下面这句话。也可以直接在当前聊天里告诉 Codex 你想学什么。</p><div class="prompt-box">我要学习【填写科目】。请按本项目 COURSE_AUTHORING.md 的流程，先逐个提问了解我的目标、基础和时间，然后一次完成整门课程、详细教材、学习计划、大纲路线图和电子书，并发布到我的课程库。</div><ol class="dialog-steps"><li><b>一次问一个问题</b><p>先明确目标，再了解基础、学习时间和需要达到的程度。</p></li><li><b>完整编写后发布</b><p>详细基础讲解、例子、练习解析与项目全部写好，再一次加入课程库。</p></li><li><b>回到这里开始学习</b><p>生成完成后，课程会自动出现在列表中。</p></li></ol><button class="btn primary" data-action="copy-prompt">复制创建提示词</button>`);}
+function createDialog(){dialog('在 Codex 聊天中创建完整课程',`<p>打开此项目的 Codex 聊天，发送下面这句话。也可以直接在当前聊天里告诉 Codex 你想学什么。</p><div class="prompt-box">我要学习【填写科目】。请按本项目 COURSE_AUTHORING.md 的流程，一次集中询问尚未明确的目标、基础、时间和偏好，然后一次完成整门课程、详细教材、学习计划、大纲路线图和电子书，并发布到我的课程库。</div><ol class="dialog-steps"><li><b>集中了解需求</b><p>一次说明目标、基础、学习时间和偏好，已有答案无需重复。</p></li><li><b>完整编写后发布</b><p>详细基础讲解、例子、练习解析与项目全部写好，再一次加入课程库。</p></li><li><b>回到这里开始学习</b><p>生成完成后，课程会自动出现在列表中。</p></li></ol><button class="btn primary" data-action="copy-prompt">复制创建提示词</button>`);}
 async function importFile(kind){
   const input=document.createElement('input');input.type='file';input.accept='.json,application/json';
   input.onchange=async()=>{try{
@@ -146,7 +146,7 @@ async function importFile(kind){
     const value=JSON.parse(await file.text());
     await flush();if(pending.size)throw new Error('请等待草稿保存成功后再导入。');
     await api(kind==='course'?'course/import':'restore',kind==='course'?{course:value}:value);
-    await load();$('#modal').close();render();toast(kind==='course'?'完整课程已加入课程库。':'课程库已恢复，旧版答题明细已清除。');
+    await load();$('#modal').close();render();toast(kind==='course'?'完整课程已加入课程库。':'课程库已恢复。');
   }catch(err){toast(err.message,true);}};input.click();
 }
 document.addEventListener('click',async event=>{
@@ -161,7 +161,7 @@ document.addEventListener('click',async event=>{
     if(action==='close')$('#modal').close();
     if(action==='copy-prompt'){await navigator.clipboard.writeText($('.prompt-box').textContent);toast('已复制，在 Codex 聊天中粘贴即可。');}
     if(action==='import')importFile('course');
-    if(action==='backup')dialog('课程库与备份',`<p>备份包含课程、已读进度、笔记、当前实践草稿和阅读位置。</p><div class="dialog-actions"><a class="btn primary" href="/api/backup" download>导出课程库备份</a><button class="btn secondary" data-action="restore">从备份恢复</button></div><p class="muted small">恢复会替换当前课程库；恢复前的课程库保存在本机快照中。旧版答题明细不会恢复。</p>`);
+    if(action==='backup')dialog('课程库与备份',`<p>备份包含课程、已读进度、笔记、当前实践草稿和阅读位置。</p><div class="dialog-actions"><a class="btn primary" href="/api/backup" download>导出课程库备份</a><button class="btn secondary" data-action="restore">从备份恢复</button></div><p class="muted small">恢复会替换当前课程库；恢复前的课程库保存在本机快照中。</p>`);
     if(action==='restore')dialog('恢复课程库',`<p>恢复文件会替换当前课程库。请先导出一份当前备份。</p><button class="btn primary" data-action="restore-file">选择备份文件并恢复</button>`);
     if(action==='restore-file')importFile('backup');
     if(action==='read'){await api('lesson/read',{courseId:c.id,lessonId:l.id});state.progress[keyFor(c.id,l.id)]={readAt:new Date().toISOString()};el.textContent='✓ 已读本章';toast('已保存已读进度。');}

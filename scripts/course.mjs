@@ -13,7 +13,7 @@ try{
     assert(arg?.trim(),'请提供科目。');mkdirSync(resolve(dataDir,'briefs'),{recursive:true});
     const file=resolve(dataDir,'briefs',Date.now()+'.json');
     writeFileSync(file,JSON.stringify({subject:arg,goal:null,level:null,minutesPerDay:null,daysPerWeek:null,weeks:null,deadline:null,preferences:null,status:'interviewing'},null,2),'utf8');
-    console.log(JSON.stringify({briefPath:file,nextQuestion:'你希望学完后，能用'+arg+'完成什么具体事情？'},null,2));
+    console.log(JSON.stringify({briefPath:file,nextQuestion:'请集中说明'+arg+'的学习目标、当前基础、每天可用时间、每周频率、期限，以及教材或输出偏好；已有答案无需重复。'},null,2));
   }else if(command==='validate'){
     const course=readCourse(arg);bookHtml(course);
     console.log(JSON.stringify({ok:true,id:course.id,chapters:course.lessons.length,bodyCharacters:course.lessons.reduce((n,l)=>n+l.sections.reduce((m,s)=>m+s.body.length,0),0)},null,2));
@@ -41,7 +41,7 @@ try{
     const store=new Store(resolve(dataDir,'kotoba.sqlite'));
     try{console.log(JSON.stringify(store.read().courses.map(c=>({id:c.id,title:c.title,chapters:c.lessons.length,completeness:c.completeness})),null,2));}finally{store.close();}
   }else{
-    console.log('使用方法：node scripts/course.mjs brief "日语" | validate <course.json> | publish <course.json> | list');
+    console.log('使用方法：node scripts/course.mjs brief "学习主题" | validate <course.json> | publish <course.json> | list');
     if(command)process.exitCode=1;
   }
 }catch(e){console.error(e.message);process.exitCode=1;}

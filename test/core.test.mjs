@@ -27,7 +27,7 @@ test('database migration also sanitizes historical snapshots',()=>{
   db.prepare('INSERT INTO state VALUES(1,?)').run(raw);db.prepare('INSERT INTO snapshots VALUES(1,?,?,?)').run('now','old',raw);db.close();
   const store=new Store(path);try{assert.equal(store.read().schemaVersion,2);const snapshot=store.db.prepare('SELECT data FROM snapshots').get().data;assert.doesNotMatch(snapshot,/明确删除|旧任务答案|"attempts"/);assert.match(snapshot,/保留的笔记/);}finally{store.close();cleanup(dir);}
 });
-test('complete course accepts general subjects and more than twelve chapters',()=>{
+test('complete course validates general subjects and an extended chapter list',()=>{
   const c=courseFixture();c.subject='程序设计';c.lessons=Array.from({length:18},(_,i)=>({...structuredClone(c.lessons[0]),id:'chapter-'+i,prerequisites:[],questions:c.lessons[0].questions.map((q,j)=>({...q,id:'q-'+i+'-'+j}))}));
   c.roadmap.edges=[];c.plan.weeks[0].lessonIds=c.lessons.map(l=>l.id);assert.equal(validateCourse(c,{requireComplete:true}).lessons.length,18);
 });
